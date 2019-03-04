@@ -53,18 +53,16 @@ function clearCache() {
 }
 
 function createContentfulProxy(config) {
-  const prependPath = config.hasOwnProperty('spaceId')
-  const target = getContentfulUrl(config)
-  const token = getAuthToken(config)
-  const secure = Boolean(config.secure)
+  const target = getContentfulUrl()
+  const token = config.accessToken
 
   const options = {
     target,
     changeOrigin: true,
     xfwd: true,
-    secure,
-    prependPath: true,
+    secure: true,
     preserveHeaderKeyCase: true,
+    selfHandleResponse: true,
     headers: { Authorization: `Bearer ${token}` }
   }
 
@@ -73,36 +71,30 @@ function createContentfulProxy(config) {
     .on('error', handleError)
 }
 
-async function cacheResponse(proxyRes, { url: key }) {
+async function cacheResponse(proxyRes, { url: key }, res) {
   const { status, statusText, headers } = proxyRes
-  const data = await json(proxyRes)
-  cache.set(key, {
-    status,
-    statusText,
-    headers: {
-      ...headers,
-      'X-contentful-cache': 'hit',
-      'X-contentful-cache-time': new Date().toISOString(),
-    },
-    data,
-  })
-}
+  try {
+    const data = await json(proxyRes)
+    cache.set(key, {
+      status,
+      statusText,
+      headers: {
+        ...headers,
+        'X-contentful-cache': 'hit',
+        'X-contentful-cache-time': new Date().toISOString(),
+      },
+      data,
+    })
+    send(res, 200, data)
 
-function getAuthToken({ accessToken, previewToken, preview = false }) {
-  const hasPreviewToken = Boolean(previewToken)
-  if (!hasPreviewToken && preview) {
-    const errorMsg = 'Please provide preview API token to use the preview API.'
-    throw new Error(errorMsg)
-    process.exit(1)
+  } catch (e) {
+    console.error(e)
+    send(res, 400)
   }
-  return preview ? previewToken : accessToken
 }
 
-function getContentfulUrl({ preview = false, secure = true, spaceId = '' }) {
-  const path = spaceId ? `spaces/${spaceId}` : ''
-  const protocol = secure ? 'https' : 'http'
-  const host = preview ? 'preview.contentful.com' : 'cdn.contentful.com'
-  return `${protocol}://${host}/${path}`
+function getContentfulUrl() {
+  return `https://cdn.contentful.com`
 }
 
 function handleError(err, req, res) {
