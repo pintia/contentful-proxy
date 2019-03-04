@@ -63,7 +63,10 @@ function createContentfulProxy(config) {
     secure: true,
     preserveHeaderKeyCase: true,
     selfHandleResponse: true,
-    headers: { Authorization: `Bearer ${token}` }
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Accept-Encoding': '',
+    }
   }
 
   return httpProxy.createProxyServer(options)
