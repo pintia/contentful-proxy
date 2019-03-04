@@ -6,14 +6,15 @@
   "author": "Felix Jung <jung.felix@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "micro -H localhost -p 3000",
+    "start": "micro -H 0.0.0.0 -p 3000",
     "dev": "export NODE_ENV=development && nodemon --watch index.js --watch config.json --exec \"micro -H localhost -p 3000\"",
     "test": "xo"
   },
   "dependencies": {
     "http-proxy": "^1.16.2",
     "lru-cache": "^4.0.2",
-    "micro": "^6.1.0"
+    "micro": "^6.1.0",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "xo": "^0.17.1"

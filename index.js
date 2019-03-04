@@ -1,9 +1,22 @@
 const LRUCache = require('lru-cache')
 const httpProxy = require('http-proxy')
 const { send, json, sendError } = require('micro')
-const config = require('./config.json')
+const winston = require('winston')
 
 const cache = new LRUCache({ maxAge: 1000 * 60 * 60 * 24 }) // cache for 1 day
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.logstash(),
+  ),
+  defaultMeta: { app: 'contentful-proxy' },
+  transports: [
+    new winston.transports.Console(),
+  ],
+})
 
 function createProxyFn(config) {
   const proxy = createContentfulProxy(config)
@@ -36,6 +49,7 @@ function addHeaders(res, headers) {
 
 function clearCache() {
   cache.reset()
+  logger.info('cache cleared')
 }
 
 function createContentfulProxy(config) {
@@ -62,7 +76,16 @@ function createContentfulProxy(config) {
 async function cacheResponse(proxyRes, { url: key }) {
   const { status, statusText, headers } = proxyRes
   const data = await json(proxyRes)
-  cache.set(key, { status, statusText, headers, data })
+  cache.set(key, {
+    status,
+    statusText,
+    headers: {
+      ...headers,
+      'X-contentful-cache': 'hit',
+      'X-contentful-cache-time': new Date().toISOString(),
+    },
+    data,
+  })
 }
 
 function getAuthToken({ accessToken, previewToken, preview = false }) {
@@ -86,4 +109,7 @@ function handleError(err, req, res) {
   sendError(req, res, err)
 }
 
+const config = {
+  accessToken: process.env['CONTENTFUL_ACCESS_TOKEN'],
+}
 module.exports = createProxyFn(config)
