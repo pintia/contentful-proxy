@@ -66,6 +66,7 @@ function createContentfulProxy(config) {
     headers: {
       Authorization: `Bearer ${token}`,
       'Accept-Encoding': '',
+      'Access-Control-Allow-Headers': '*',
     }
   }
 
