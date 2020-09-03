@@ -140,7 +140,7 @@ async function cacheResponse(proxyRes, { url: key }, res) {
 }
 
 function getContentfulUrl() {
-  return `http://cdn.contentful.com`
+  return `https://cdn.contentful.com`
 }
 
 function handleError(err, req, res) {
